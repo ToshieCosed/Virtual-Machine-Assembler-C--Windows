@@ -1,0 +1,6 @@
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\bin\Debug\Virtual Machine Assembler.exe.config
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\bin\Debug\Virtual Machine Assembler.exe
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\bin\Debug\Virtual Machine Assembler.pdb
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\obj\Debug\Virtual Machine Assembler.csprojResolveAssemblyReference.cache
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\obj\Debug\Virtual Machine Assembler.exe
+c:\users\remmie's\documents\visual studio 2015\Projects\Virtual Machine Assembler\Virtual Machine Assembler\obj\Debug\Virtual Machine Assembler.pdb
