@@ -8,7 +8,7 @@ namespace Virtual_Machine_Assembler
 {
     public class Opcode
     {
-        public enum paramtype{DEFAULT, REGISTER, VALUE, ADDRESS, REGISTERADDRESS};
+        public enum paramtype{DEFAULT, REGISTER, VALUE, ADDRESS, REGISTERADDRESS, LABEL, STRING, GOTO};
         public int param_amount;
         public string memnonic;
         public paramtype param1 = paramtype.DEFAULT;
