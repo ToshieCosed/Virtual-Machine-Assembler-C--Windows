@@ -373,6 +373,11 @@ namespace Virtual_Machine_Assembler
         {
             int[] bytes = new int[30]; //We'll use extra just to be safe
             int firstbyte = data.byte_index;
+
+            //handle replace goto with JMP because it's basically the same thing but with label
+            if (firstbyte == 42) { firstbyte = 33; }
+
+
             int currentbyte = 1;
             bytes[0] = firstbyte;
             int param1length = data.param1.Length;
@@ -458,9 +463,9 @@ namespace Virtual_Machine_Assembler
 
             }
 
-            new object();
+           
 
-            if (data.paramtype2 == Opcode.paramtype.VALUE || data.paramtype2 == Opcode.paramtype.ADDRESS || data.paramtype2 == Opcode.paramtype.STRING)
+            if (data.paramtype2 == Opcode.paramtype.STRING)
             {
 
                 if (data.paramtype1 != Opcode.paramtype.GOTO)
@@ -478,42 +483,35 @@ namespace Virtual_Machine_Assembler
 
                 }
 
-                if (data.paramtype1 != Opcode.paramtype.LABEL)
+                if (data.paramtype1 == Opcode.paramtype.GOTO)
                 {
-                    value = 0;
-                    if (data.paramtype2 == Opcode.paramtype.VALUE || data.paramtype2 == Opcode.paramtype.ADDRESS) { value = System.Convert.ToInt32(Right(data.param2, param2length - 1)); }
-                    //patch in checking for byte pointers, only if not label type.
-                
-
-
-                    if (!firstrun)
+                    value = 0; //we don't know what it could be until recompile :)
+                       
                     {
-                        if (data.param1 == "goto" && (data.param1 != "label")) { value = labelbytepointers[data.param2]; }
+                        //A bit redundant since we declare 'value' 0 later for goto but. whatever.
+                        //in theory this should compile ALL the needed bytes and still get the correct pointer
+                        if (!firstrun) {
+                            if (data.param1 == "goto" && (data.param1 != "label")) {
+                            value = labelbytepointers[data.param2]; }
+                            Console.WriteLine("Value injection found for goto statement " + data.param2 + " and the injection value was " + value);
+                        }
+                        byte[] results = INT2LE(value);
+                        bytes[currentbyte] = results[0];
+                        currentbyte++;
+                        bytes[currentbyte] = results[1];
+                        currentbyte++;
+                        bytes[currentbyte] = results[2];
+                        currentbyte++;
+                        bytes[currentbyte] = results[3];
+                        currentbyte++;
+                       
+                       
                     }
 
-
-
-
-                    Console.WriteLine("Value injection found for goto statement " + data.param2 + " and the injection value was " + value);
-
-                    //double check it's not a label since the above check will execute even if it is a label.
-               
-                    byte[] results = INT2LE(value);
-                    // Console.WriteLine("Bytes are " + results[0] + "," + results[1] + "," + results[2] + "," + results[3]);
-                    int[] r = new int[10];
-                    get(value, 8, 0, r);
-                    //Console.WriteLine(" for comparison other bytes are " + r[0] + "," + r[1] + "," + r[2] + "," + r[3]);
-                    //put the bytes into the opcode array stream
-                    bytes[currentbyte] = results[0];
-                    currentbyte++;
-                    bytes[currentbyte] = results[1];
-                    currentbyte++;
-                    bytes[currentbyte] = results[2];
-                    currentbyte++;
-                    bytes[currentbyte] = results[3];
                 }
 
-
+                
+                    
 
             }
 
