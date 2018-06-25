@@ -53,6 +53,7 @@ namespace Virtual_Machine_Assembler
     {
         public static ValidParams validparams = new ValidParams();
         public static Dictionary<String, int> labelbytepointers = new Dictionary<string, int>();
+        public static bool firstrun = true;
 
         
         //string[] opcodenumbers = {"Nop", "LD", "LD", "LD", "ST", "ST", "ADD", "ADD", "ADD", "SUB", "SUB", "SUB", "ST8", "ST8", "ST16", "ST16", "LD8", "LD8", "LD16", "LD16", "CMP", "CMP", "CMP", "CMP16", "CMP8", "BEQ", "BEQ", "BNEQ", "BNEQ", "CALL", "RET", "JMP", "JMP", "OR", "OR", "AND", "AND", "XOR", "XOR"};
@@ -75,7 +76,14 @@ namespace Virtual_Machine_Assembler
             //Console.WriteLine(validcodes.Count);
             Console.WriteLine("Now to test if this program can identify an opcode type an assembly command");
             string userline = Console.ReadLine();
+
+                //Kind of cheat to do a two-pass compile.
             compile_(userline);
+            Console.WriteLine("First pass completed, recompiling with label pointers");
+            firstrun = false;
+            compile_(userline);
+
+            new object();
 
             // int num = getopcode(userline);
             // Console.WriteLine("The input was maybe identified as opcode # " + num);
@@ -138,10 +146,10 @@ namespace Virtual_Machine_Assembler
                     //Now we're compiling!!
 
                     
-                    Opcode_ByteData tempdata = compile_line(line);
+                    Opcode_ByteData tempdata = compile_line(line, bytepointer);
                     int bytes_to_write = tempdata.total_instr_length;
                     
-                    if (tempdata.param1 == "label") { Console.WriteLine("label was found at " + (bytepointer-old_bytes_to_write)); }
+                    if (tempdata.param1 == "label") { Console.WriteLine("label was found outside compile line function at " + (bytepointer-old_bytes_to_write)); }
                     for (int t = 0; t < bytes_to_write+1 ; t++)
                     {
                         if (bytestream != null)
@@ -176,7 +184,7 @@ namespace Virtual_Machine_Assembler
             return out_string;
         }
 
-        public static Opcode_ByteData compile_line(string userline)
+        public static Opcode_ByteData compile_line(string userline, int bpointer)
         {
             userline.Replace("/r/n", "");
             bool found_opcode = false;
@@ -194,7 +202,7 @@ namespace Virtual_Machine_Assembler
                 string opstring = make_opcode_string(userdata.byte_index);
                 if (userdata.success)
                 {
-                    byte_data = get_bytes(userdata);
+                    byte_data = get_bytes(userdata, bpointer);
                     byte_data.param1 = userdata.param1;
                     byte_data.param2 = userdata.param2;
 
@@ -361,7 +369,7 @@ namespace Virtual_Machine_Assembler
 
         }
 
-        public static Opcode_ByteData get_bytes(Opcode_Data data)
+        public static Opcode_ByteData get_bytes(Opcode_Data data, int bpointer)
         {
             int[] bytes = new int[30]; //We'll use extra just to be safe
             int firstbyte = data.byte_index;
@@ -371,6 +379,7 @@ namespace Virtual_Machine_Assembler
             int param2length = data.param2.Length;
             int param1bytelength = 1;
             int param2bytelength = 1;
+            int value = 0;
 
 
 
@@ -388,7 +397,7 @@ namespace Virtual_Machine_Assembler
             if (data.paramtype1 == Opcode.paramtype.VALUE || data.paramtype1 == Opcode.paramtype.ADDRESS)
             {
                 bool writtenvalue = false;
-                int value = System.Convert.ToInt32(Right(data.param1, param1length - 1));
+                value = System.Convert.ToInt32(Right(data.param1, param1length - 1));
                 //Console.WriteLine("The value was " + secondbyte);
                 byte[] results = INT2LE(value);
                 //Console.WriteLine("Bytes are " + results[0] + "," + results[1] + "," + results[2] + "," + results[3]);
@@ -442,7 +451,7 @@ namespace Virtual_Machine_Assembler
 
             if (data.paramtype2 == Opcode.paramtype.REGISTER || data.paramtype2 == Opcode.paramtype.REGISTERADDRESS)
             {
-                int value = data.reg2value;
+                value = data.reg2value;
                 //Write the current value
                 bytes[currentbyte] = value;
 
@@ -453,13 +462,39 @@ namespace Virtual_Machine_Assembler
 
             if (data.paramtype2 == Opcode.paramtype.VALUE || data.paramtype2 == Opcode.paramtype.ADDRESS || data.paramtype2 == Opcode.paramtype.STRING)
             {
+
+                if (data.paramtype1 != Opcode.paramtype.GOTO)
+                {
+                    value = 0;
+                    //if (data.paramtype2 == Opcode.paramtype.VALUE || data.paramtype2 == Opcode.paramtype.ADDRESS) { value = System.Convert.ToInt32(Right(data.param2, param2length - 1)); }
+                    //patch in checking for byte pointers, only if not label type.
+
+                    if (firstrun)
+                    {
+                        value = bpointer;
+                        if (data.paramtype1 == Opcode.paramtype.LABEL) { labelbytepointers.Add(data.param2, value); }
+                       
+                    }
+
+                }
+
                 if (data.paramtype1 != Opcode.paramtype.LABEL)
                 {
-                    int value = 0;
+                    value = 0;
                     if (data.paramtype2 == Opcode.paramtype.VALUE || data.paramtype2 == Opcode.paramtype.ADDRESS) { value = System.Convert.ToInt32(Right(data.param2, param2length - 1)); }
-                //patch in checking for byte pointers, only if not label type.
-                if (data.param1 == "goto" && (data.param1!="label")) { value = labelbytepointers[data.param2]; }
-                Console.WriteLine("Value injection found for goto statement " + data.param2 + " and the injection value was " + value);
+                    //patch in checking for byte pointers, only if not label type.
+                
+
+
+                    if (!firstrun)
+                    {
+                        if (data.param1 == "goto" && (data.param1 != "label")) { value = labelbytepointers[data.param2]; }
+                    }
+
+
+
+
+                    Console.WriteLine("Value injection found for goto statement " + data.param2 + " and the injection value was " + value);
 
                     //double check it's not a label since the above check will execute even if it is a label.
                
